@@ -1,4 +1,4 @@
-# Step 1: Build React App using Vite
+# Step 1: Build Vite React App
 FROM node:18-alpine as build
 
 WORKDIR /app
