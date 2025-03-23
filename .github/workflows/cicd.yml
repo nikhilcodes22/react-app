@@ -1,13 +1,21 @@
+name: CICD
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Source
         uses: actions/checkout@v3
 
-      - name: Show Dockerfile contents
+      - name: Show Dockerfile contents (debug)
         run: |
-          echo "PWD: $(pwd)"
+          echo "Working dir: $(pwd)"
           ls -la
           echo "--- Dockerfile ---"
           cat Dockerfile
@@ -20,3 +28,20 @@ jobs:
 
       - name: Publish image to Docker Hub
         run: docker push nikhilcodes22/react-app:latest
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, react-app]
+
+    steps:
+      - name: Pull image from Docker Hub
+        run: docker pull nikhilcodes22/react-app:latest
+
+      - name: Delete old container if exists
+        run: |
+          if [ "$(docker ps -aq -f name=reactContainer)" ]; then
+            docker rm -f reactContainer
+          fi
+
+      - name: Run Docker container
+        run: docker run -d -p 3000:80 --name reactContainer nikhilcodes22/react-app:latest
