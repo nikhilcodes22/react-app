@@ -11,20 +11,28 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v3
-      - name: Login to Docker Hub
-        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build Docker Image
-        run: docker build -t nikhilcodes22/react-app .
-      - name: Publish image to docker hub
-        run: docker push nikhilcodes22/react-app:latest   
 
-  deploy: 
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: docker build -t nikhilcodes22/react-app:latest .
+
+      - name: Publish image to Docker Hub
+        run: docker push nikhilcodes22/react-app:latest
+
+  deploy:
     needs: build
-    runs-on: aws-ec2    
+    runs-on: [self-hosted, react-app]
     steps:
-      - name: Pull image from docker hub
-        run: docker pull nikhilcodes22/react-app:latest 
-      - name: Delete Old Container
-        run: docker rm -f reactContainer
-      - name: Run docker container
-        run: docker run -d -p 3000:80 --name reactContainer nikhilcodes22/react-app  
+      - name: Pull image from Docker Hub
+        run: docker pull nikhilcodes22/react-app:latest
+
+      - name: Delete old container if exists
+        run: |
+          if [ "$(docker ps -aq -f name=reactContainer)" ]; then
+            docker rm -f reactContainer
+          fi
+
+      - name: Run Docker container
+        run: docker run -d -p 3000:80 --name reactContainer nikhilcodes22/react-app:latest
